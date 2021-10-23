@@ -18,7 +18,6 @@ namespace DemoAPI.Controllers
     public class ProductsController : ControllerBase
     {
 
-        //private readonly ILogger<ProductController> _logger;
 
         private IProductService _productService;
 
@@ -26,10 +25,6 @@ namespace DemoAPI.Controllers
         {
             _productService = productService;
         }
-        //public ProductController(ILogger<ProductController> logger)
-        //{
-        //    _logger = logger;
-        //}
 
         [HttpGet()]
         public IEnumerable<Product> Get()
@@ -40,19 +35,6 @@ namespace DemoAPI.Controllers
         public IActionResult GetById(int productId)
         {
 
-            Request.Headers.TryGetValue("x-security-header", out var headerValue);
-
-            // read your secret from Azure Key Vault
-            string kvUri =
-                    "https://kv-for-apim.vault.azure.net/";
-
-            SecretClient client =
-                new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
-
-            var secret= client.GetSecretAsync("securityHeader").Result.Value.Value;
-
-            if (!headerValue.Equals(secret))
-                return Unauthorized("Direct Access to API is restricted");
 
             var product=_productService.GetProductById(productId);
             if (product == null)

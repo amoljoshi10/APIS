@@ -42,8 +42,10 @@ namespace DemoAPI
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            string kvUri =
-                    "https://kv-for-apim.vault.azure.net/";
+            //string kvUri =
+            //        "https://kv-for-apim.vault.azure.net/";
+
+
             app.UseSwagger();
 
             app.UseSwaggerUI(c =>
