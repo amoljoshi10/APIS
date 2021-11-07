@@ -12,7 +12,7 @@ namespace DemoAPI.Services
         public static List<Product> _products;
         public Product GetProductById(int productID)
         {
-            return _products.FirstOrDefault(p => p.ProductID == productID);
+            return GetProducts().FirstOrDefault(p => p.ProductID == productID);
         }
 
         public IEnumerable<Product> GetProducts()
