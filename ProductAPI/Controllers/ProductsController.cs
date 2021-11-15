@@ -34,7 +34,19 @@ namespace DemoAPI.Controllers
         [HttpGet("{productId}")]
         public IActionResult GetById(int productId)
         {
+            Request.Headers.TryGetValue("x-security-header", out var headerValue);
 
+            // read your secret from Azure Key Vault
+            string kvUri =
+                    "https://kv-for-apim.vault.azure.net/";
+
+            SecretClient client =
+                new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
+
+            var secret= client.GetSecretAsync("securityHeader").Result.Value.Value;
+
+            if (!headerValue.Equals(secret))
+                return Unauthorized("Direct Access to API is restricted");
 
             var product=_productService.GetProductById(productId);
             if (product == null)
