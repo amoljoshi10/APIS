@@ -1,0 +1,51 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "apis_product_api_path": {
+            "value": null
+        },
+        "subscriptions_612517b67583d6005a070001_displayName": {
+            "value": null
+        },
+        "subscriptions_612517b67583d6005a070002_displayName": {
+            "value": null
+        },
+        "subscriptions_61272bff46346109a074a901_displayName": {
+            "value": null
+        },
+        "users_1_lastName": {
+            "value": null
+        },
+        "sites_ProductAPI2021_name": {
+            "value": null
+        },
+        "sites_CustomerAPI2021_name": {
+            "value": null
+        },
+        "vaults_kv_for_apim_name": {
+            "value": null
+        },
+        "storageAccounts_storageacctforanapp_name": {
+            "value": null
+        },
+        "serverfarms_ProductAPI20210824230610Plan_name": {
+            "value": null
+        },
+        "components_AppInsightForPordCustAPIM_name": {
+            "value": null
+        },
+        "service_apimservice_products_customers_name": {
+            "value": null
+        },
+        "actionGroups_Application_Insights_Smart_Detection_name": {
+            "value": null
+        },
+        "webtests_apimservice_products_customers_AppInsightForPordCustAPIM_name": {
+            "value": null
+        },
+        "workspaces_DefaultWorkspace_ca85ca6b_46a5_46a0_898b_01701ed1bee6_EUS2_externalid": {
+            "value": null
+        }
+    }
+}
