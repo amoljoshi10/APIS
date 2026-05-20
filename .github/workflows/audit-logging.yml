@@ -1,0 +1,51 @@
+name: Audit Logging & Security Monitoring
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 0 * * *'  # Daily
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  audit-log:
+    name: Security Audit Log
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Security Audit Report
+        run: |
+          echo "## Security Audit Report - $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "### Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "### Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "### Triggered by: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "### Commit SHA: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All security pipeline runs are logged here for audit trail." >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for secrets in diff
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+        continue-on-error: true
+
+      - name: Upload audit log artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-log-${{ github.run_id }}
+          path: |
+            *.sarif
+            *.json
+          retention-days: 90
+        continue-on-error: true
