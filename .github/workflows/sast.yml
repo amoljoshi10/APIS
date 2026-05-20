@@ -13,7 +13,7 @@ jobs:
     name: SonarQube SAST
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0          # full history for blame annotations
       - name: SonarQube Scan
