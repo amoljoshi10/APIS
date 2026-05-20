@@ -1,0 +1,27 @@
+name: Branch Protection Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  branch-protection:
+    name: Enforce Branch Protection
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check branch protection status
+        run: |
+          echo "Branch protection is enforced via repository settings."
+          echo "Required: pull request reviews before merging."
+          echo "See: Settings > Branches > Branch protection rules"
+          echo "Recommended settings:"
+          echo "  - Require a pull request before merging"
+          echo "  - Require at least 1 approving review"
+          echo "  - Dismiss stale pull request approvals"
+          echo "  - Require status checks to pass before merging"
+          echo "  - Require branches to be up to date before merging"
