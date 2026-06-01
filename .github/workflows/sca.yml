@@ -1,4 +1,4 @@
-name: SCA - Trivy
+name: SCA - Snyk
 on:
   push:
     branches: [ main, master, develop ]
@@ -9,22 +9,20 @@ permissions:
   contents: read
   security-events: write
 jobs:
-  trivy:
-    name: Trivy SCA Scan
+  snyk:
+    name: Snyk SCA
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/python@master
         continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --sarif-file-output=snyk.sarif
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: trivy-results.sarif
+          sarif_file: snyk.sarif
         continue-on-error: true
