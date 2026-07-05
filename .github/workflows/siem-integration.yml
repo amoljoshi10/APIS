@@ -1,0 +1,57 @@
+name: SIEM Integration - Microsoft Sentinel
+on:
+  workflow_run:
+    workflows: ["SAST - Static Application Security Testing",
+                "SCA - Software Composition Analysis"]
+    types: [completed]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_call: {}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  forward-to-sentinel:
+    name: Forward Findings to Microsoft Sentinel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send security findings to Microsoft Sentinel
+        env:
+          SENTINEL_WORKSPACE_ID: ${{ secrets.SENTINEL_WORKSPACE_ID }}
+          SENTINEL_WORKSPACE_KEY: ${{ secrets.SENTINEL_WORKSPACE_KEY }}
+        run: |
+          cat > /tmp/fwd_sentinel.py << 'PYEOF'
+          import hmac, hashlib, base64, datetime, json, urllib.request, os
+          wid  = os.environ['SENTINEL_WORKSPACE_ID']
+          wkey = os.environ['SENTINEL_WORKSPACE_KEY']
+          body = json.dumps([{
+              'Repository': os.environ.get('GITHUB_REPOSITORY', ''),
+              'Workflow':   os.environ.get('GITHUB_WORKFLOW', ''),
+              'RunId':      os.environ.get('GITHUB_RUN_ID', ''),
+              'SHA':        os.environ.get('GITHUB_SHA', ''),
+              'Ref':        os.environ.get('GITHUB_REF', ''),
+              'Source':     'github-actions',
+          }])
+          rfc_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+          clen = len(body.encode())
+          s2h  = 'POST
+' + str(clen) + '
+application/json
+x-ms-date:' + rfc_date + '
+/api/logs'
+          dkey = base64.b64decode(wkey)
+          sig  = base64.b64encode(hmac.new(dkey, s2h.encode(), hashlib.sha256).digest()).decode()
+          url  = 'https://' + wid + '.ods.opinsights.azure.com/api/logs?api-version=2016-04-01'
+          req  = urllib.request.Request(url, data=body.encode(), method='POST',
+                     headers={'Content-Type': 'application/json',
+                              'Authorization': 'SharedKey ' + wid + ':' + sig,
+                              'Log-Type': 'GitHubSecurityFindings',
+                              'x-ms-date': rfc_date})
+          with urllib.request.urlopen(req) as r:
+              print('Sentinel HTTP ' + str(r.status) + ' - Forwarded to Sentinel')
+          PYEOF
+          python3 /tmp/fwd_sentinel.py
+        # Required GitHub secrets:
+        #   SENTINEL_WORKSPACE_ID  — Azure: Log Analytics workspace > Overview > Workspace ID
+        #   SENTINEL_WORKSPACE_KEY — Azure: Log Analytics workspace > Agents > Primary key
