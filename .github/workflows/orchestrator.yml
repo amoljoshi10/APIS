@@ -15,50 +15,102 @@ permissions:
   actions: read
 
 jobs:
-  sast:
-    uses: ./.github/workflows/sast.yml
+  sbom:
+    uses: ./.github/workflows/sbom.yml
     secrets: inherit
 
-  secret_detection:
-    uses: ./.github/workflows/secret-detection.yml
-    secrets: inherit
-
-  sca:
-    uses: ./.github/workflows/sca.yml
-    secrets: inherit
-
-  sca:
-    uses: ./.github/workflows/sca.yml
+  secrets_baseline:
+    uses: ./.github/workflows/secrets-baseline.yml
     secrets: inherit
 
   iac_scan:
     uses: ./.github/workflows/iac-scan.yml
     secrets: inherit
 
-  sast:
-    uses: ./.github/workflows/sast.yml
-    secrets: inherit
-
-  dast:
-    uses: ./.github/workflows/dast.yml
-    secrets: inherit
-
-  build:
-    uses: ./.github/workflows/build.yml
+  test:
+    uses: ./.github/workflows/test.yml
     secrets: inherit
 
   test:
     uses: ./.github/workflows/test.yml
     secrets: inherit
 
-  branch_protection_check:
-    uses: ./.github/workflows/branch-protection-check.yml
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  iac_scan:
+    uses: ./.github/workflows/iac-scan.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  siem_integration:
+    uses: ./.github/workflows/siem-integration.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  supply_chain:
+    uses: ./.github/workflows/supply-chain.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  dast:
+    uses: ./.github/workflows/dast.yml
+    secrets: inherit
+
+  iac_scan:
+    uses: ./.github/workflows/iac-scan.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
     secrets: inherit
 
   security_gate:
     uses: ./.github/workflows/security-gate.yml
     secrets: inherit
 
-  audit_logging:
-    uses: ./.github/workflows/audit-logging.yml
+  siem_integration:
+    uses: ./.github/workflows/siem-integration.yml
+    secrets: inherit
+
+  siem_integration:
+    uses: ./.github/workflows/siem-integration.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  sca:
+    uses: ./.github/workflows/sca.yml
+    secrets: inherit
+
+  test:
+    uses: ./.github/workflows/test.yml
     secrets: inherit
