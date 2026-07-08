@@ -22,7 +22,7 @@ jobs:
     name: OWASP ZAP DAST Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
