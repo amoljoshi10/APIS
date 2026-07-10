@@ -13,52 +13,29 @@ permissions:
   contents: read
   security-events: write
   actions: read
+  pull-requests: read
 
 jobs:
-  sast:
-    uses: ./.github/workflows/sast.yml
-    secrets: inherit
-
-  secret_detection:
-    uses: ./.github/workflows/secret-detection.yml
-    secrets: inherit
-
-  sca:
-    uses: ./.github/workflows/sca.yml
-    secrets: inherit
-
-  sca:
-    uses: ./.github/workflows/sca.yml
-    secrets: inherit
-
   iac_scan:
     uses: ./.github/workflows/iac-scan.yml
-    secrets: inherit
-
-  sast:
-    uses: ./.github/workflows/sast.yml
-    secrets: inherit
-
-  dast:
-    uses: ./.github/workflows/dast.yml
-    secrets: inherit
-
-  build:
-    uses: ./.github/workflows/build.yml
     secrets: inherit
 
   test:
     uses: ./.github/workflows/test.yml
     secrets: inherit
 
-  branch_protection_check:
-    uses: ./.github/workflows/branch-protection-check.yml
+  siem_integration:
+    uses: ./.github/workflows/siem-integration.yml
+    secrets: inherit
+
+  dast:
+    uses: ./.github/workflows/dast.yml
     secrets: inherit
 
   security_gate:
     uses: ./.github/workflows/security-gate.yml
     secrets: inherit
 
-  audit_logging:
-    uses: ./.github/workflows/audit-logging.yml
+  sca:
+    uses: ./.github/workflows/sca.yml
     secrets: inherit
