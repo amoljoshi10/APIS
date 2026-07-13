@@ -1,0 +1,40 @@
+name: SCA - Snyk
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_call: {}
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+jobs:
+  snyk:
+    name: Snyk SCA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locate .NET project file
+        id: find_proj
+        run: |
+          PROJ=$(find . -maxdepth 4 -iname "*.csproj" | awk '{ print length, $0 }' | sort -n | head -1 | cut -d" " -f2-)
+          echo "proj=$PROJ" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+      - name: Restore .NET dependencies
+        run: dotnet restore "${{ steps.find_proj.outputs.proj }}" || true
+      - name: Install Snyk CLI
+        run: npm install -g snyk@1.1306.0 --ignore-scripts
+      - name: Run Snyk to check for vulnerabilities
+        run: |
+          PROJ_DIR=$(dirname "${{ steps.find_proj.outputs.proj }}")
+          (cd "$PROJ_DIR" && snyk test --sarif-file-output="$GITHUB_WORKSPACE/snyk.sarif") || true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('snyk.sarif') != ''
+        with:
+          sarif_file: snyk.sarif
+        continue-on-error: true
