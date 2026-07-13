@@ -1,0 +1,25 @@
+name: Tests - .NET Tests
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_call: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    name: .NET Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+      - name: Run tests
+        run: PROJ=$(find . -maxdepth 4 -iname "*.sln" | awk '{ print length, $0 }' | sort -n | head -1 | cut -d" " -f2-); [ -z "$PROJ" ] && PROJ=$(find . -maxdepth 4 -iname "*.csproj" | awk '{ print length, $0 }' | sort -n | head -1 | cut -d" " -f2-); dotnet test "$PROJ" --logger trx --results-directory TestResults/ || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: TestResults/
