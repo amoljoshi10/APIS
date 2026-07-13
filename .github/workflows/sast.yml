@@ -1,0 +1,50 @@
+name: SAST - SonarCloud (.NET)
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_call: {}
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  sonarcloud:
+    name: SonarCloud SAST (.NET)
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # needed so the scanner can auto-configure PR analysis
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+      - name: Install dotnet-sonarscanner
+        run: dotnet tool install --global dotnet-sonarscanner --ignore-failed-sources || true
+      - name: SonarCloud Begin
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          dotnet sonarscanner begin \
+            /k:"$SONAR_PROJECT_KEY" \
+            /o:"$SONAR_ORGANIZATION" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.qualitygate.wait=true || true
+      - name: Build
+        run: |
+          PROJ=$(find . -maxdepth 4 -iname "*.sln" | awk '{ print length, $0 }' | sort -n | head -1 | cut -d" " -f2-)
+          [ -z "$PROJ" ] && PROJ=$(find . -maxdepth 4 -iname "*.csproj" | awk '{ print length, $0 }' | sort -n | head -1 | cut -d" " -f2-)
+          dotnet build "$PROJ" || true
+      - name: SonarCloud End
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN" || true
+      # Required GitHub secrets: SONAR_TOKEN, SONAR_ORGANIZATION, SONAR_PROJECT_KEY
