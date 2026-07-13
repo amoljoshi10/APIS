@@ -1,0 +1,31 @@
+name: IaC Scan - Checkov
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_call: {}
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+jobs:
+  checkov:
+    name: Checkov IaC Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@7b972723c44fb3d256283fac96fae5d7c1894bb7  # v12.3114.0
+        with:
+          directory: .
+          framework: all
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: true
+          skip_path: bin,obj,node_modules,.git,dist,build
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('checkov-results.sarif') != ''
+        with:
+          sarif_file: checkov-results.sarif
+        continue-on-error: true
