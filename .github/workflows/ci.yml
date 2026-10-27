@@ -24,4 +24,4 @@ jobs:
  runs-on: ubuntu-latest
  steps:
  - run: |
- echo "curl: Failed to connect to a registry.example.com: ETIMEDOUT"
+ echo "curl: Failed to connect to registry.example.com: ETIMEDOUT"
