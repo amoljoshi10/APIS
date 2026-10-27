@@ -1,1 +1,34 @@
+name: CI
 
+on:
+ workflow_dispatch:
+ inputs:
+ scenario:
+ type: choice
+ options: [deprecated-action, flaky, test-failure]
+ default: deprecated-action
+
+jobs:
+ deprecated-action:
+ if: inputs.scenario == 'deprecated-action'
+ runs-on: ubuntu-latest
+ steps:
+ - uses: actions/checkout@v4
+ - uses: actions/upload-artifact@v3
+ with:
+ name: readme
+ path: README.md
+
+ flaky:
+ if: inputs.scenario == 'flaky'
+ runs-on: ubuntu-latest
+ steps:
+ - run: |
+ echo "curl: (28) Failed to connect to registry.example.com: ETIMEDOUT"
+ exit 1
+
+ test-failure:
+ if: inputs.scenario == 'test-failure'
+ runs-on: ubuntu-latest
+ steps:
+ - run: python3 -c "assert 1 == 2, 'expected value 1 but got 2'"
