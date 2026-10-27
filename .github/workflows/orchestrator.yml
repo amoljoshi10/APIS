@@ -16,26 +16,26 @@ permissions:
   pull-requests: read
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yml
-    secrets: inherit
-
   sca:
     uses: ./.github/workflows/sca.yml
     secrets: inherit
 
-  sast:
-    uses: ./.github/workflows/sast.yml
+  iac_scan:
+    uses: ./.github/workflows/iac-scan.yml
     secrets: inherit
 
-  secret_detection:
-    uses: ./.github/workflows/secret-detection.yml
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  siem_integration:
+    uses: ./.github/workflows/siem-integration.yml
+    secrets: inherit
+
+  dast:
+    uses: ./.github/workflows/dast.yml
     secrets: inherit
 
   security_gate:
     uses: ./.github/workflows/security-gate.yml
-    secrets: inherit
-
-  iac_scan:
-    uses: ./.github/workflows/iac-scan.yml
     secrets: inherit
