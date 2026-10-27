@@ -31,7 +31,7 @@ jobs:
  runs-on: ubuntu-latest
  steps:
  - run: |
- echo "### 🚀 [Open DSOMM Assessment & Implementation for this repository](${{ vars.DSOMM_WEB_URL }}/?repo=https://github.com/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
+    echo "### 🚀 [Open DSOMM Assessment & Implementation for this repository](${{ vars.DSOMM_WEB_URL }}/?repo=https://github.com/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
  echo "Enter your GitHub PAT in DSOMM Web, choose AutoPilot or LLM mode and press Start." >> "$GITHUB_STEP_SUMMARY"
 
  self-heal:
