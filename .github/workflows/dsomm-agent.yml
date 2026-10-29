@@ -1,45 +1,54 @@
+# NextGen DSOMM Agents V2 — "DSOMM Agent" on-demand button (GitHub Actions)
+#
+# Copy to .github/workflows/dsomm-agent.yml on the repo's DEFAULT branch.
+# GitHub then shows: Actions tab → "DSOMM Agent" → [ Run workflow ▾ ] → choose what to do.
+# • Assess & Implement in DSOMM Web → the run's Summary page (and the job log) shows a link that opens
+# DSOMM Web with this repo pre-filled (the user types their own PAT there). No image/secret needed.
+# • Self-Heal a failed run → runs DSOMM Agent in this workflow (progress in the job log).
+#
+# Setup (repo → Settings → Secrets and variables → Actions):
+# Variables: DSOMM_WEB_URL e.g. https://dsomm-web.<region>.azurecontainerapps.io
+# Secrets (Self-Heal only): DSOMM_TOKEN (fine-grained PAT: Actions RW, Contents RW, Pull requests RW,
+# Workflows RW), ACR_USERNAME, ACR_PASSWORD (pull access to the image)
+# Only include the parts of the customer's plan: delete the job they did not subscribe to.
 name: DSOMM Agent
 
-'on':
-  workflow_dispatch:
-    inputs:
-      action:
-        description: What should DSOMM Agent do?
-        type: choice
-        options:
-          - Assess & Implement in DSOMM Web
-          - Self-Heal a failed run
-      run_id:
-        description: "Self-Heal only: failed run id (empty = latest failed run)"
-        required: false
-        default: ""
+on:
+ workflow_dispatch:
+ inputs:
+ action:
+ description: What should DSOMM Agent do?
+ type: choice
+ options: [Assess & Implement in DSOMM Web, Self-Heal a failed run]
+ run_id:
+ description: "Self-Heal only: failed run id (empty = latest failed run)"
+ required: false
+ default: ""
 
 jobs:
-  assess-implement:
-    if: ${{ inputs.action == 'Assess & Implement in DSOMM Web' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Open DSOMM assessment
-        shell: bash
-        run: |
-          echo "### 🚀 [Open DSOMM Assessment & Implementation for this repository](${{ vars.DSOMM_WEB_URL }}/?repo=https://github.com/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
-          echo "Enter your GitHub PAT in DSOMM Web, choose AutoPilot or LLM mode and press Start." >> "$GITHUB_STEP_SUMMARY"
+ assess-implement:
+ if: inputs.action == 'Assess & Implement in DSOMM Web'
+ runs-on: ubuntu-latest
+ steps:
+ - run: |
+ echo "### 🚀 [Open DSOMM Assessment & Implementation for this repository](${{ vars.DSOMM_WEB_URL }}/?repo=https://github.com/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
+ echo "Enter your GitHub PAT in DSOMM Web, choose AutoPilot or LLM mode and press Start." >> "$GITHUB_STEP_SUMMARY"
+ echo "Open DSOMM Web: ${{ vars.DSOMM_WEB_URL }}/?repo=https://github.com/${{ github.repository }}"
 
-  self-heal:
-    if: ${{ inputs.action == 'Self-Heal a failed run' }}
-    runs-on: ubuntu-latest
-    container:
-      image: dsomm.azurecr.io/dsomm-agent:2.0
-      credentials:
-        username: ${{ secrets.ACR_USERNAME }}
-        password: ${{ secrets.ACR_PASSWORD }}
-      env:
-        PROVIDER: github
-        REPO: ${{ github.repository }}
-        RUN_ID: ${{ inputs.run_id || 'latest' }}
-        TOKEN: ${{ secrets.DSOMM_TOKEN }}
-        DSOMM_WEB_URL: ${{ vars.DSOMM_WEB_URL }}
-        DRY_RUN: "false"
-    steps:
-      - name: Self-heal failed DSOMM run
-        run: python -m dsomm_agent heal
+ self-heal:
+ if: inputs.action == 'Self-Heal a failed run'
+ runs-on: ubuntu-latest
+ container:
+ image: dsomm.azurecr.io/dsomm-agent:2.0 # <-- your registry/image
+ credentials:
+ username: ${{ secrets.ACR_USERNAME }}
+ password: ${{ secrets.ACR_PASSWORD }}
+ env:
+ PROVIDER: github
+ REPO: ${{ github.repository }}
+ RUN_ID: ${{ inputs.run_id || 'latest' }}
+ TOKEN: ${{ secrets.DSOMM_TOKEN }}
+ DSOMM_WEB_URL: ${{ vars.DSOMM_WEB_URL }}
+ DRY_RUN: "false"
+ steps:
+ - run: python -m dsomm_agent heal
