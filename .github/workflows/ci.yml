@@ -7,35 +7,40 @@
 # test-failure → expect a diagnosis comment on the commit, no PR
 name: CI
 
-on:
- workflow_dispatch:
- inputs:
- scenario:
- type: choice
- options: [deprecated-action, flaky, test-failure]
- default: deprecated-action
+'on':
+  workflow_dispatch:
+    inputs:
+      scenario:
+        type: choice
+        options:
+          - deprecated-action
+          - flaky
+          - test-failure
+        default: deprecated-action
 
 jobs:
- deprecated-action:
- if: inputs.scenario == 'deprecated-action'
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
- - uses: actions/upload-artifact@v3 # retired by GitHub → the job is failed automatically
- with:
- name: readme
- path: README.md
+  deprecated-action:
+    if: ${{ inputs.scenario == 'deprecated-action' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v3
+        with:
+          name: readme
+          path: README.md
 
- flaky:
- if: inputs.scenario == 'flaky'
- runs-on: ubuntu-latest
- steps:
- - run: |
- echo "curl: (28) Failed to connect to registry.example.com: ETIMEDOUT"
- exit 1
+  flaky:
+    if: ${{ inputs.scenario == 'flaky' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simulate flaky failure
+        run: |
+          echo "curl: (28) Failed to connect to registry.example.com: ETIMEDOUT"
+          exit 1
 
- test-failure:
- if: inputs.scenario == 'test-failure'
- runs-on: ubuntu-latest
- steps:
- - run: python3 -c "assert 1 == 2, 'expected value 1 but got 2'"
+  test-failure:
+    if: ${{ inputs.scenario == 'test-failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger test failure
+        run: python3 -c "assert 1 == 2, 'expected value 1 but got 2'"
