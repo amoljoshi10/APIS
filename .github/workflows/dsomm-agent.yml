@@ -31,12 +31,12 @@ jobs:
  runs-on: ubuntu-latest
  steps:
  - run: |
- echo "### 🚀 [Open DSOMM Assessment & Implementation for this repository](${{ vars.DSOMM_WEB_URL }}/?repo=https://github.com/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
- echo "Enter your GitHub PAT in DSOMM Web, choose AutoPilot or LLM mode and press Start." >> "$GITHUB_STEP_SUMMARY"
+    echo "### 🚀 [Open DSOMM Assessment & Implementation for this repository](${{ vars.DSOMM_WEB_URL }}/?repo=https://github.com/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
+    echo "Enter your GitHub PAT in DSOMM Web, choose AutoPilot or LLM mode and press Start." >> "$GITHUB_STEP_SUMMARY"
 
  self-heal:
- if: inputs.action == 'Self-Heal a failed run'
- runs-on: ubuntu-latest
+  if: inputs.action == 'Self-Heal a failed run'
+  runs-on: ubuntu-latest
  container:
  image: dsomm.azurecr.io/dsomm-agent:2.0 # <-- your registry/image
  credentials:
@@ -49,5 +49,5 @@ jobs:
  TOKEN: ${{ secrets.DSOMM_TOKEN }}
  DSOMM_WEB_URL: ${{ vars.DSOMM_WEB_URL }}
  DRY_RUN: "false"
- steps:
+steps:
  - run: python -m dsomm_agent heal
