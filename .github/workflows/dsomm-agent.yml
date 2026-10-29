@@ -1,6 +1,6 @@
 name: DSOMM Agent
 
-on:
+'on':
   workflow_dispatch:
     inputs:
       action:
@@ -19,7 +19,9 @@ jobs:
     if: ${{ inputs.action == 'Assess & Implement in DSOMM Web' }}
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - name: Open DSOMM assessment
+        shell: bash
+        run: |
           echo "### 🚀 [Open DSOMM Assessment & Implementation for this repository](${{ vars.DSOMM_WEB_URL }}/?repo=https://github.com/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
           echo "Enter your GitHub PAT in DSOMM Web, choose AutoPilot or LLM mode and press Start." >> "$GITHUB_STEP_SUMMARY"
 
@@ -34,9 +36,10 @@ jobs:
       env:
         PROVIDER: github
         REPO: ${{ github.repository }}
-        RUN_ID: ${{ inputs.run_id != '' && inputs.run_id || 'latest' }}
+        RUN_ID: ${{ inputs.run_id || 'latest' }}
         TOKEN: ${{ secrets.DSOMM_TOKEN }}
         DSOMM_WEB_URL: ${{ vars.DSOMM_WEB_URL }}
         DRY_RUN: "false"
     steps:
-      - run: python -m dsomm_agent heal
+      - name: Self-heal failed DSOMM run
+        run: python -m dsomm_agent heal
