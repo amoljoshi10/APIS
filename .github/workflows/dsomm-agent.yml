@@ -1,16 +1,3 @@
-# NextGen DSOMM Agents V2 — "DSOMM Agent" on-demand button (GitHub Actions)
-#
-# Copy to .github/workflows/dsomm-agent.yml on the repo's DEFAULT branch.
-# GitHub then shows: Actions tab → "DSOMM Agent" → [ Run workflow ▾ ] → choose what to do.
-# • Assess & Implement in DSOMM Web → the run's Summary page shows a link that opens
-# DSOMM Web with this repo pre-filled (the user types their own PAT there). No image/secret needed.
-# • Self-Heal a failed run → runs DSOMM Agent in this workflow (progress in the job log).
-#
-# Setup (repo → Settings → Secrets and variables → Actions):
-# Variables: DSOMM_WEB_URL e.g. https://dsomm-web.<region>.azurecontainerapps.io
-# Secrets (Self-Heal only): DSOMM_TOKEN (fine-grained PAT: Actions RW, Contents RW, Pull requests RW,
-# Workflows RW), ACR_USERNAME, ACR_PASSWORD (pull access to the image)
-# Only include the parts of the customer's plan: delete the job they did not subscribe to.
 name: DSOMM Agent
 
 on:
@@ -20,7 +7,7 @@ on:
  description: What should DSOMM Agent do?
  type: choice
  options: [Assess & Implement in DSOMM Web, Self-Heal a failed run]
- run_id:
+run_id:
  description: "Self-Heal only: failed run id (empty = latest failed run)"
  required: false
  default: ""
