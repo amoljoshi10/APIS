@@ -1,0 +1,116 @@
+# TEST ONLY — "Self-Heal Demo" (added by DSOMM Web): deliberately failing jobs to try DSOMM Agent Self-Heal on.
+# Actions → Self-Heal Demo → Run workflow → pick a scenario; when it has failed,
+# Actions → DSOMM Agent → Run workflow → "Self-Heal a failed run (beta)".
+#   deprecated-action → a fix PR (upload-artifact@v3 → its latest version) from branch dsomm-selfheal/<run id>
+#   codeql-v2         → a fix PR (CodeQL Action @v2 → its latest version)                    [SAST]
+#   retired-runner    → a fix PR (runs-on: ubuntu-20.04 → ubuntu-latest)
+#   zap-retired-image → a fix PR (owasp/zap2docker-stable → ghcr.io/zaproxy/zaproxy:stable)   [DAST]
+#   artifact-conflict → a fix PR (a unique security-report artifact name per matrix leg)
+#   shallow-clone     → a fix PR (checkout fetch-depth: 1 → 0, so the history can be scanned) [secret scanning]
+#   flaky             → one re-run; when that fails too, a diagnosis comment on the commit
+#   test-failure      → a diagnosis comment on the commit, no PR
+# After a fix PR is merged, its scenario passes. GitHub no longer starts jobs on a retired runner image
+# or CodeQL Action v1/v2, so codeql-v2 and retired-runner print GitHub's message (simulated) while the
+# "legacy" job, which never runs, still uses them.
+# Delete this file when you have finished trying Self-Heal.
+name: Self-Heal Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        type: choice
+        options: [deprecated-action, codeql-v2, retired-runner, zap-retired-image, artifact-conflict,
+                  shallow-clone, flaky, test-failure]
+        default: deprecated-action
+
+jobs:
+  deprecated-action:
+    if: inputs.scenario == 'deprecated-action'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v3
+        with:
+          name: readme
+          path: README.md
+
+  codeql-v2:
+    if: inputs.scenario == 'codeql-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          if grep -qE 'github/codeql-action/[a-z-]+@v[12]\s*$' .github/workflows/selfheal-demo.yml; then
+            echo "::error::CodeQL Action major versions v1 and v2 have been deprecated. Please update all occurrences of the CodeQL Action in your workflow files to v3. (simulated)"
+            exit 1
+          fi
+
+  retired-runner:
+    if: inputs.scenario == 'retired-runner'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          if grep -qE '^\s+runs-on: ubuntu-20\.04\s*$' .github/workflows/selfheal-demo.yml; then
+            echo "::error::This is a scheduled Ubuntu 20.04 brownout. The Ubuntu 20.04 Actions runner image is retired. (simulated)"
+            exit 1
+          fi
+
+  legacy:
+    if: false          # never runs — only holds the old runner image and CodeQL Action version above
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: github/codeql-action/init@v2
+        with:
+          languages: python
+
+  zap-retired-image:
+    if: inputs.scenario == 'zap-retired-image'
+    runs-on: ubuntu-latest
+    steps:
+      - name: DAST scan (OWASP ZAP baseline)
+        run: |
+          IMAGE=owasp/zap2docker-stable
+          case "$IMAGE" in owasp/*)
+            docker pull "$IMAGE" && echo "::error::pull access denied: the owasp/zap2docker images are retired (simulated)"
+            exit 1 ;;
+          esac
+          docker run --rm "$IMAGE" zap-baseline.py -t https://www.example.com -I
+
+  artifact-conflict:
+    if: inputs.scenario == 'artifact-conflict'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scanner: [sast, sca]
+    steps:
+      - run: echo "${{ matrix.scanner }} findings" > report.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: report.txt
+
+  shallow-clone:
+    if: inputs.scenario == 'shallow-clone'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Scan the latest commits for secrets (needs the history)
+        run: git log --oneline HEAD~1..HEAD
+
+  flaky:
+    if: inputs.scenario == 'flaky'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "curl: (28) Failed to connect to registry.example.com: ETIMEDOUT"
+          exit 1
+
+  test-failure:
+    if: inputs.scenario == 'test-failure'
+    runs-on: ubuntu-latest
+    steps:
+      - run: python3 -c "assert 1 == 2, 'expected value 1 but got 2'"
