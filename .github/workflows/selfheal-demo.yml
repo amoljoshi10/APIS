@@ -59,7 +59,7 @@ jobs:
 
   legacy:
     if: false          # never runs — only holds the old runner image and CodeQL Action version above
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: github/codeql-action/init@v2
         with:
