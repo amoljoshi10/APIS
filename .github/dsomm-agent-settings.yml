@@ -6,4 +6,4 @@
 #   auto    a failed run is self-healed at once (fix PR, one re-run, or a diagnosis)
 #   button  a "DSOMM Agent" check with Self-Heal / Run Assessment buttons waits for a click
 # Without this file, the DSOMM Agent server's SELFHEAL_TRIGGER applies (default: auto).
-selfheal_trigger: button
+selfheal_trigger: auto
