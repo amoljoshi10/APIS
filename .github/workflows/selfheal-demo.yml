@@ -29,7 +29,7 @@ jobs:
     if: inputs.scenario == 'deprecated-action'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/upload-artifact@v3
         with:
           name: readme
@@ -39,7 +39,7 @@ jobs:
     if: inputs.scenario == 'codeql-v2'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: |
           if grep -qE 'github/codeql-action/[a-z-]+@v[12]\s*$' .github/workflows/selfheal-demo.yml; then
             echo "::error::CodeQL Action major versions v1 and v2 have been deprecated. Please update all occurrences of the CodeQL Action in your workflow files to v3. (simulated)"
@@ -50,7 +50,7 @@ jobs:
     if: inputs.scenario == 'retired-runner'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: |
           if grep -qE '^\s+runs-on: ubuntu-20\.04\s*$' .github/workflows/selfheal-demo.yml; then
             echo "::error::This is a scheduled Ubuntu 20.04 brownout. The Ubuntu 20.04 Actions runner image is retired. (simulated)"
@@ -61,7 +61,7 @@ jobs:
     if: false          # never runs — only holds the old runner image and CodeQL Action version above
     runs-on: ubuntu-20.04
     steps:
-      - uses: github/codeql-action/init@v2
+      - uses: github/codeql-action/init@v3
         with:
           languages: python
 
@@ -95,7 +95,7 @@ jobs:
     if: inputs.scenario == 'shallow-clone'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
       - name: Scan the latest commits for secrets (needs the history)
