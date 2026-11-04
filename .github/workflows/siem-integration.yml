@@ -1,0 +1,35 @@
+name: SIEM Integration - Elasticsearch (ELK)
+on:
+  workflow_run:
+    workflows: ["SAST - Static Application Security Testing",
+                "SCA - Software Composition Analysis"]
+    types: [completed]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_call: {}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  forward-to-elastic:
+    name: Forward Findings to Elasticsearch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send security findings to Elasticsearch
+        run: |
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          PAYLOAD=$(printf '{"@timestamp":"%s","source":"github-actions","repository":"%s","workflow":"%s","run_id":"%s","sha":"%s","ref":"%s"}' \
+            "${TIMESTAMP}" "${{ github.repository }}" \
+            "${{ github.workflow }}" "${{ github.run_id }}" \
+            "${{ github.sha }}" "${{ github.ref }}")
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Authorization: ApiKey ${{ secrets.ELASTIC_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${{ secrets.ELASTIC_URL }}/security-findings/_doc")
+          echo "Elasticsearch response: ${HTTP_CODE}"
+          [ "${HTTP_CODE}" = "200" ] && echo "Forwarded to Elasticsearch" || echo "Warning: Elasticsearch returned ${HTTP_CODE}"
+        # Required GitHub secrets:
+        #   ELASTIC_API_KEY — Kibana: Stack Management > API Keys > Create API key
+        #   ELASTIC_URL     — e.g. https://elasticsearch.yourcompany.com:9200
