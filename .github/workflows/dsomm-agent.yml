@@ -17,6 +17,11 @@ on:
         description: "Self-Heal only: failed run id (empty = latest failed run)"
         required: false
         default: ""
+      mode:
+        description: "Self-Heal only: AutoPilot (rules, no LLM) or LLM (AI fix, this run only)"
+        type: choice
+        options: [AutoPilot, LLM]
+        default: AutoPilot
 
 jobs:
   assess-implement:
@@ -41,6 +46,7 @@ jobs:
       PROVIDER: github
       REPO: ${{ github.repository }}
       RUN_ID: ${{ inputs.run_id || 'latest' }}
+      AGENT_MODE: ${{ inputs.mode }}
       TOKEN: ${{ secrets.DSOMM_TOKEN }}
       DSOMM_WEB_URL: "https://ai-catalyst.calmmushroom-da6f9699.eastus.azurecontainerapps.io"
       DRY_RUN: "false"
