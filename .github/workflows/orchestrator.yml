@@ -28,14 +28,14 @@ jobs:
     uses: ./.github/workflows/sast.yml
     secrets: inherit
 
-  secret_detection:
-    uses: ./.github/workflows/secret-detection.yml
-    secrets: inherit
-
   security_gate:
     uses: ./.github/workflows/security-gate.yml
     secrets: inherit
 
   iac_scan:
     uses: ./.github/workflows/iac-scan.yml
+    secrets: inherit
+
+  siem_integration:
+    uses: ./.github/workflows/siem-integration.yml
     secrets: inherit
