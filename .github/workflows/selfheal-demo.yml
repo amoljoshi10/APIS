@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v7
         with:
           name: readme
           path: README.md
@@ -113,7 +113,7 @@ jobs:
         scanner: [sast, sca]
     steps:
       - run: echo "${{ matrix.scanner }} findings" > report.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: security-report
           path: report.txt
