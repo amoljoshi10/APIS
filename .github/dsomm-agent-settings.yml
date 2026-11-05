@@ -1,0 +1,9 @@
+# DSOMM Agent settings for this repository (added by DSOMM Web -> Additional Setup).
+#
+# selfheal_trigger is used ONLY by the DSOMM Agent GitHub App, when the App is installed on this
+# repository and enabled on the DSOMM Agent server. It has no effect on the DSOMM Agent Actions
+# workflow (Run workflow buttons) or on a repository webhook.
+#   auto    a failed run is self-healed at once (fix PR, one re-run, or a diagnosis)
+#   button  a "DSOMM Agent" check with Self-Heal / Run Assessment buttons waits for a click
+# Without this file, the DSOMM Agent server's SELFHEAL_TRIGGER applies (default: auto).
+selfheal_trigger: auto
