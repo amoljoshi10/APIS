@@ -1,0 +1,27 @@
+name: Build and Test in Virtual Environment
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+permissions:
+  contents: read
+jobs:
+  build-test:
+    name: Build in Isolated Container
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:22.04
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends             build-essential python3 python3-pip nodejs npm
+      - name: Build in isolated environment
+        run: |
+          if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
+          if [ -f package.json ]; then npm ci; fi
+      - name: Run tests
+        run: |
+          if [ -f Makefile ] && grep -q '^test:' Makefile; then make test; fi
