@@ -1,0 +1,29 @@
+name: Automated Deployment
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options: [staging, production]
+permissions:
+  contents: read
+  deployments: write
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to environment
+        run: |
+          echo "Deploying to ${{ github.event.inputs.environment || 'staging' }}"
+          echo "Add your deployment commands here (kubectl apply, helm upgrade, etc.)"
+      - name: Verify deployment
+        run: |
+          echo "Add health check / smoke test here"
