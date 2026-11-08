@@ -1,0 +1,66 @@
+name: Build and Test in Virtual Environment
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+permissions:
+  contents: read
+jobs:
+  build-test:
+    name: Build in Isolated Container
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: ubuntu:22.04   # a fresh container per run; root inside it, so apt-get can install the build tools
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build in isolated environment
+        shell: bash
+        run: |
+          warn() { echo "::warning::$*"; }
+          set -eo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          PKGS="ca-certificates curl"
+          if [ -f requirements.txt ] || [ -f Makefile ]; then PKGS="$PKGS build-essential python3 python3-pip"; fi
+          if [ -f package.json ]; then PKGS="$PKGS nodejs npm"; fi
+          DOTNET=$(find . \( -name '*.sln' -o -name '*.csproj' -o -name '*.fsproj' -o -name '*.vbproj' \) -not -path '*/bin/*' -not -path '*/obj/*' 2>/dev/null | head -1 || true)
+          if [ -n "$DOTNET" ]; then PKGS="$PKGS libicu70"; fi
+          JAVA_FILE=$(find . \( -name pom.xml -o -name build.gradle -o -name build.gradle.kts -o -name settings.gradle -o -name settings.gradle.kts \) -not -path '*/target/*' -not -path '*/build/*' -not -path '*/node_modules/*' 2>/dev/null | awk -F/ '{ print NF, $0 }' | sort -n | head -1 | cut -d' ' -f2- || true)
+          JAVA_DIR=""
+          if [ -n "$JAVA_FILE" ]; then
+            JAVA_DIR=$(dirname "$JAVA_FILE")
+            PKGS="$PKGS openjdk-17-jdk-headless"
+            if [ -f "$JAVA_DIR/pom.xml" ] && [ ! -f "$JAVA_DIR/mvnw" ]; then PKGS="$PKGS maven"; fi
+          fi
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends $PKGS
+          if [ -n "$DOTNET" ]; then
+            # .NET SDK: the newest netX.0 in any TargetFramework(s), at least 8.0 (a global.json, when present, wins)
+            MAJOR=$(grep -rhoE --include='*.csproj' --include='*.fsproj' --include='*.vbproj' --include='*.props' '<TargetFrameworks?>[^<]*' . 2>/dev/null | grep -oE 'net[0-9]+\.[0-9]+' | sed -E 's/^net([0-9]+)\..*/\1/' | sort -n | tail -1 || true)
+            if [ -z "$MAJOR" ] || [ "$MAJOR" -lt 8 ]; then MAJOR=8; fi
+            echo "Using .NET SDK $MAJOR.0 (unless global.json pins another)"
+            curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+            if [ -f global.json ]; then bash /tmp/dotnet-install.sh --jsonfile global.json --install-dir /usr/share/dotnet
+            else bash /tmp/dotnet-install.sh --channel "$MAJOR.0" --install-dir /usr/share/dotnet; fi
+            export PATH="/usr/share/dotnet:$PATH" DOTNET_ROOT=/usr/share/dotnet DOTNET_NOLOGO=true DOTNET_CLI_TELEMETRY_OPTOUT=true
+            # The top-level solution(s) only: solutions deeper down are often partial or out of date
+            BUILDS=$(find . -name '*.sln' -not -path '*/bin/*' -not -path '*/obj/*' | awk -F/ '{ print NF, $0 }' | sort -n | awk 'NR == 1 { d = $1 } $1 == d { sub(/^[0-9]+ /, ""); print }')
+            if [ -z "$BUILDS" ]; then BUILDS=$(find . \( -name '*.csproj' -o -name '*.fsproj' -o -name '*.vbproj' \) -not -path '*/bin/*' -not -path '*/obj/*' | sort); fi
+            while IFS= read -r b; do
+              if [ -n "$b" ]; then echo "== dotnet build $b"; dotnet build "$b" -p:EnableWindowsTargeting=true; fi
+            done <<< "$BUILDS"
+          fi
+          if [ -n "$JAVA_DIR" ]; then
+            (
+              cd "$JAVA_DIR"
+              if [ -f pom.xml ] && [ -f mvnw ]; then chmod +x mvnw; ./mvnw -B compile
+              elif [ -f pom.xml ]; then mvn -B compile
+              elif [ -f gradlew ]; then chmod +x gradlew; ./gradlew assemble --no-daemon
+              else warn "Gradle project without a wrapper (gradlew), so it wasn't built here: add one with: gradle wrapper"; fi
+            )
+          fi
+          if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
+          if [ -f package.json ]; then npm ci; fi
+          if [ -f Makefile ] && grep -q '^test:' Makefile; then make test; fi
+          echo "Isolated build finished."
