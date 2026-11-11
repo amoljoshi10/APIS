@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +12,7 @@ namespace DemoAPI.Services
         public static List<Product> _products;
         public Product GetProductById(int productID)
         {
-            return _products.FirstOrDefault(p => p.ProductID == productID);
+            return GetProducts().FirstOrDefault(p => p.ProductID == productID);
         }
 
         public IEnumerable<Product> GetProducts()
@@ -32,15 +32,18 @@ namespace DemoAPI.Services
         }
         public void AddProduct(Product product)
         {
+            GetProducts();
             _products.Add(product);
         }
         public void UpdateProduct(Product product,Product updatedProduct)
         {
+            GetProducts();
             _products.Remove(product);
             _products.Add(updatedProduct);
         }
         public void DeletProduct(Product product)
         {
+            GetProducts();
             _products.Remove(product);
         }
 
