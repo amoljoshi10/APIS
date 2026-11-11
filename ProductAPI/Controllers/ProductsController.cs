@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using DemoAPI.Interfaces;
+using ProductAPI.Interfaces;
 
 
 namespace DemoAPI.Controllers
@@ -20,10 +21,11 @@ namespace DemoAPI.Controllers
 
 
         private IProductService _productService;
-
-        public ProductsController(IProductService productService)
+        private readonly ISecurityHeaderProvider _securityHeader;
+        public ProductsController(IProductService productService,ISecurityHeaderProvider securityHeader)
         {
             _productService = productService;
+            _securityHeader = securityHeader;
         }
 
         [HttpGet()]
@@ -34,18 +36,19 @@ namespace DemoAPI.Controllers
         [HttpGet("{productId}")]
         public IActionResult GetById(int productId)
         {
+            
             Request.Headers.TryGetValue("x-security-header", out var headerValue);
 
             // read your secret from Azure Key Vault
-            string kvUri =
-                    "https://kv-for-apim.vault.azure.net/";
+            //string kvUri =
+            //        "https://kv-for-apim.vault.azure.net/";
 
-            SecretClient client =
-                new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
+            //SecretClient client =
+            //    new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
 
-            var secret= client.GetSecretAsync("securityHeader").Result.Value.Value;
+            //var secret= client.GetSecretAsync("securityHeader").Result.Value.Value;
 
-            if (!headerValue.Equals(secret))
+            if (!headerValue.Equals(_securityHeader.GetSecurityHeader()))
                 return Unauthorized("Direct Access to API is restricted");
 
             var product=_productService.GetProductById(productId);
