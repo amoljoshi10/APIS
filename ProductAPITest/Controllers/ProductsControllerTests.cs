@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using DemoAPI.Controllers;
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,8 @@ using Moq;
 using DemoAPI.Interfaces;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using ProductAPI.Interfaces;
 
 namespace DemoAPI.Controllers.Tests
 {
@@ -17,12 +19,16 @@ namespace DemoAPI.Controllers.Tests
         private List<Product> productsData;
         private Mock<IProductService> mockProductService;
 
+        private Mock<ISecurityHeaderProvider> mockSecurityHeader;
 
         [TestInitialize]
         public void Initialize()
         {
             var productMock = new Mock<Product>();
             mockProductService = new Mock<IProductService>();
+            mockSecurityHeader = new Mock<ISecurityHeaderProvider>();
+            mockSecurityHeader.Setup(s => s.GetSecurityHeader()).Returns("test-header");
+
 
             productsData = new List<Product>();
 
@@ -34,12 +40,23 @@ namespace DemoAPI.Controllers.Tests
             
         }
 
+        private ProductsController NewController(string header="test-header")
+        {
+            var httpContext=new DefaultHttpContext();
+            if(header != null) httpContext.Request.Headers["x-security-header"]=header;
+            return new ProductsController(mockProductService.Object, mockSecurityHeader.Object)
+            {
+                ControllerContext = new ControllerContext { HttpContext = httpContext }
+            };
+        }
+
+        
 
         [TestMethod()]
         public void GetTest()
         {
             mockProductService.Setup(p => p.GetProducts()).Returns(productsData.AsEnumerable());
-            productController = new ProductsController(mockProductService.Object);
+            productController = NewController();
 
             var result = productController.Get();
             Assert.AreEqual(20, result.Count());
@@ -52,7 +69,7 @@ namespace DemoAPI.Controllers.Tests
 
 
             mockProductService.Setup(p => p.GetProductById(1)).Returns(product);
-            productController = new ProductsController(mockProductService.Object);
+            productController = NewController();
 
             var result = productController.GetById(1);
 
