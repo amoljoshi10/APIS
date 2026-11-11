@@ -8,7 +8,7 @@ using DemoAPI.Interfaces;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using ProductAPI.Interfaces;
+using DemoAPI.Interfaces;
 
 namespace DemoAPI.Controllers.Tests
 {
