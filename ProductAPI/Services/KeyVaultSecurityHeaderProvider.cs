@@ -1,8 +1,8 @@
-﻿using Azure.Identity;
+using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using ProductAPI.Interfaces;
+using DemoAPI.Interfaces;
 
-namespace ProductAPI.Services
+namespace DemoAPI.Services
 {
     public class KeyVaultServiceProviderc : ISecurityHeaderProvider
     {
