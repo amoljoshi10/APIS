@@ -1,0 +1,35 @@
+name: Defined Build Process
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Reproducible Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up build environment
+        run: |
+          echo "BUILD_VERSION=$(git describe --tags --always --dirty)" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+      - name: Build application
+        run: |
+          if [ -f Makefile ] && grep -q '^build:' Makefile; then
+            make build
+          elif [ -f package.json ]; then
+            npm ci --ignore-scripts && npm run build
+          elif [ -f setup.py ] || [ -f pyproject.toml ]; then
+            python3 -m pip wheel --no-deps -w dist .
+          else
+            echo "Add your build command here"
+          fi
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ env.BUILD_VERSION }}
+          path: dist/
+          retention-days: 30
