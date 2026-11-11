@@ -98,7 +98,7 @@ jobs:
     steps:
       - name: DAST scan (OWASP ZAP baseline)
         run: |
-          IMAGE=owasp/zap2docker-stable
+          IMAGE=ghcr.io/zaproxy/zaproxy:stable
           case "$IMAGE" in owasp/*)
             docker pull "$IMAGE" && echo "::error::pull access denied: the owasp/zap2docker images are retired (simulated)"
             exit 1 ;;
