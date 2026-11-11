@@ -1,0 +1,23 @@
+name: Application Metrics Collection
+on:
+  push:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 */6 * * *'
+permissions:
+  contents: read
+jobs:
+  metrics:
+    name: Collect and Verify Metrics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check metrics instrumentation
+        run: |
+          echo "Checking for metrics libraries..."
+          grep -r "prometheus\|statsd\|datadog\|newrelic\|opentelemetry"             --include="*.py" --include="*.js" --include="*.ts" --include="*.go"             --include="requirements*.txt" --include="package.json" . 2>/dev/null | head -20 || true
+      - name: Verify metrics endpoints
+        run: |
+          echo "Checking for /metrics or /health endpoints..."
+          grep -r '"/metrics"\|"/health"\|"/ready"'             --include="*.py" --include="*.js" --include="*.ts" . 2>/dev/null | head -10 || true
+        continue-on-error: true
