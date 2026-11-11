@@ -1,4 +1,4 @@
-﻿namespace ProductAPI.Interfaces
+namespace DemoAPI.Interfaces
 {
     public interface ISecurityHeaderProvider
     {
