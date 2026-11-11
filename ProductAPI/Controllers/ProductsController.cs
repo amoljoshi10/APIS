@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using DemoAPI.Interfaces;
-using ProductAPI.Interfaces;
+
 
 
 namespace DemoAPI.Controllers
