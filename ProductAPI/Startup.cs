@@ -31,6 +31,7 @@ namespace DemoAPI
         {
             services.AddRouting();
             services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<ISecurityHeaderProvider, KeyVaultServiceProviderc>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
