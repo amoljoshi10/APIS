@@ -1,0 +1,322 @@
+# TEST ONLY — "Self-Heal Demo" (added by DSOMM Web): deliberately failing jobs to try DSOMM Agent Self-Heal on.
+# Actions → Self-Heal Demo → Run workflow → pick a scenario; when it has failed,
+# Actions → DSOMM Agent → Run workflow → "Self-Heal a failed run (beta)".
+#   deprecated-action → a fix PR (upload-artifact@v3 → its latest version) from branch dsomm-selfheal/<run id>
+#   codeql-v2         → a fix PR (CodeQL Action @v2 → its latest version)                    [SAST]
+#   retired-runner    → a fix PR (runs-on: ubuntu-20.04 → ubuntu-latest)
+#   zap-retired-image → a fix PR (owasp/zap2docker-stable → ghcr.io/zaproxy/zaproxy:stable)   [DAST]
+#   artifact-conflict → a fix PR (a unique security-report artifact name per matrix leg)
+#   shallow-clone     → a fix PR (checkout fetch-depth: 1 → 0, so the history can be scanned) [secret scanning]
+#   flaky             → one re-run; when that fails too, a diagnosis comment on the commit
+#   test-failure      → a diagnosis comment on the commit, no PR
+# LLM mode only (DSOMM Agent run form: Mode = LLM, or DSOMM Web → Additional Setup → LLM) — in AutoPilot
+# these get a diagnosis; in LLM mode the AI proposes the fix PR shown:
+#   set-output            → the set-output workflow command → >> "$GITHUB_OUTPUT"
+#   old-python            → python-version 3.6 → a supported version
+#   sdk-mismatch          → .NET 6 SDK image for a net8.0 project → the .NET 8 SDK image          [.NET]
+#   compose-v1            → docker-compose → docker compose
+#   missing-permission    → an AI diagnosis naming the permission to add (Self-Heal never changes permissions)
+#   npm-ci-no-lock        → npm ci → npm install
+#   cache-no-lock         → setup-node cache: npm without a lock file → the cache setting removed
+#   script-permission     → ./build.sh → sh ./build.sh
+#   pep668                → pip into the system Python → setup-python or a virtual environment
+#   trivy-db-limit        → Trivy DB rate limit → --db-repository public.ecr.aws/aquasecurity/trivy-db   [container scanning]
+#   codeql-language       → languages: c-sharp → csharp                                          [SAST]
+#   codeql-build-mode     → C# autobuild fails → the build mode "none" (no build needed)          [SAST, .NET]
+#   apt-stale             → apt-get install without apt-get update → apt-get update added
+#   image-uppercase       → an image name with capital letters → lower case
+#   git-dubious-ownership → git refuses the folder → git config --global --add safe.directory
+#   windows-shell         → bash commands on windows-latest → shell: bash
+#   dotnet-no-solution    → dotnet build without a project → the project path                   [.NET]
+#   dotnet-no-restore     → dotnet build --no-restore without a restore → restore added          [.NET]
+#   dotnet-global-json    → global.json asks for an SDK the runner lacks → setup-dotnet global-json-file  [.NET]
+# After a fix PR is merged, its scenario passes. GitHub no longer starts jobs on a retired runner image
+# or CodeQL Action v1/v2, so codeql-v2 and retired-runner print GitHub's message (simulated) while the
+# "legacy" job, which never runs, still uses them. set-output, trivy-db-limit and codeql-build-mode are
+# simulated the same way (their real failure can't be produced on demand).
+# Delete this file when you have finished trying Self-Heal.
+# Self-Heal Demo scenarios: v2
+name: Self-Heal Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        type: choice
+        options: [deprecated-action, codeql-v2, retired-runner, zap-retired-image, artifact-conflict,
+                  shallow-clone, flaky, test-failure,
+                  set-output, old-python, sdk-mismatch, compose-v1, missing-permission, npm-ci-no-lock,
+                  cache-no-lock, script-permission, pep668, trivy-db-limit, codeql-language, codeql-build-mode,
+                  apt-stale, image-uppercase, git-dubious-ownership, windows-shell, dotnet-no-solution,
+                  dotnet-no-restore, dotnet-global-json]
+        default: deprecated-action
+
+jobs:
+  deprecated-action:
+    if: inputs.scenario == 'deprecated-action'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v3
+        with:
+          name: readme
+          path: README.md
+
+  codeql-v2:
+    if: inputs.scenario == 'codeql-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          if grep -qE 'github/codeql-action/[a-z-]+@v[12]\s*$' .github/workflows/selfheal-demo.yml; then
+            echo "::error::CodeQL Action major versions v1 and v2 have been deprecated. Please update all occurrences of the CodeQL Action in your workflow files to v3. (simulated)"
+            exit 1
+          fi
+
+  retired-runner:
+    if: inputs.scenario == 'retired-runner'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          if grep -qE '^\s+runs-on: ubuntu-20\.04\s*$' .github/workflows/selfheal-demo.yml; then
+            echo "::error::This is a scheduled Ubuntu 20.04 brownout. The Ubuntu 20.04 Actions runner image is retired. (simulated)"
+            exit 1
+          fi
+
+  legacy:
+    if: false          # never runs — only holds the old runner image and CodeQL Action version above
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: github/codeql-action/init@v2
+        with:
+          languages: python
+
+  zap-retired-image:
+    if: inputs.scenario == 'zap-retired-image'
+    runs-on: ubuntu-latest
+    steps:
+      - name: DAST scan (OWASP ZAP baseline)
+        run: |
+          IMAGE=owasp/zap2docker-stable
+          case "$IMAGE" in owasp/*)
+            docker pull "$IMAGE" && echo "::error::pull access denied: the owasp/zap2docker images are retired (simulated)"
+            exit 1 ;;
+          esac
+          docker run --rm "$IMAGE" zap-baseline.py -t https://www.example.com -I
+
+  artifact-conflict:
+    if: inputs.scenario == 'artifact-conflict'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scanner: [sast, sca]
+    steps:
+      - run: echo "${{ matrix.scanner }} findings" > report.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: report.txt
+
+  shallow-clone:
+    if: inputs.scenario == 'shallow-clone'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Scan the latest commits for secrets (needs the history)
+        run: git log --oneline HEAD~1..HEAD
+
+  flaky:
+    if: inputs.scenario == 'flaky'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "curl: (28) Failed to connect to registry.example.com: ETIMEDOUT"
+          exit 1
+
+  test-failure:
+    if: inputs.scenario == 'test-failure'
+    runs-on: ubuntu-latest
+    steps:
+      - run: python3 -c "assert 1 == 2, 'expected value 1 but got 2'"
+
+  set-output:
+    if: inputs.scenario == 'set-output'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        run: echo "::set-output name=version::1.0"
+      - run: |
+          if grep -qE 'ech[o] "::set-output' .github/workflows/selfheal-demo.yml; then
+            echo "::error::The set-output command is disabled. Please upgrade to using Environment Files. (simulated)"
+            exit 1
+          fi
+
+  old-python:
+    if: inputs.scenario == 'old-python'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.6"
+      - run: python --version
+
+  sdk-mismatch:
+    if: inputs.scenario == 'sdk-mismatch'
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:6.0
+    steps:
+      - name: Build a .NET 8 project
+        run: |
+          mkdir -p sdk-demo && cd sdk-demo
+          printf '%s\n' '<Project Sdk="Microsoft.NET.Sdk">' '  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework></PropertyGroup>' '</Project>' > app.csproj
+          echo 'System.Console.WriteLine("ok");' > Program.cs
+          dotnet build
+
+  compose-v1:
+    if: inputs.scenario == 'compose-v1'
+    runs-on: ubuntu-latest
+    steps:
+      - run: docker-compose version
+
+  missing-permission:
+    if: inputs.scenario == 'missing-permission'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Set a commit status (needs statuses write)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context=self-heal-demo
+
+  npm-ci-no-lock:
+    if: inputs.scenario == 'npm-ci-no-lock'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          mkdir -p npm-demo && cd npm-demo
+          echo '{"name": "npm-demo", "version": "1.0.0"}' > package.json
+          npm ci
+
+  cache-no-lock:
+    if: inputs.scenario == 'cache-no-lock'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: node --version
+
+  script-permission:
+    if: inputs.scenario == 'script-permission'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          printf '#!/bin/sh\necho build ok\n' > build.sh
+          ./build.sh
+
+  pep668:
+    if: inputs.scenario == 'pep668'
+    runs-on: ubuntu-latest
+    steps:
+      - run: /usr/bin/python3 -m pip install requests
+
+  trivy-db-limit:
+    if: inputs.scenario == 'trivy-db-limit'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Container image scan (Trivy)
+        run: |
+          ARGS="image --severity HIGH,CRITICAL alpine:3.20"
+          case "$ARGS" in *db-repository*) ;; *)
+            echo "::error::FATAL init error: failed to download vulnerability DB: TOOMANYREQUESTS: retry-after: 1.5s (simulated)"
+            exit 1 ;;
+          esac
+          docker run --rm aquasec/trivy:latest $ARGS
+
+  codeql-language:
+    if: inputs.scenario == 'codeql-language'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: c-sharp
+
+  codeql-build-mode:
+    if: inputs.scenario == 'codeql-build-mode'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+      - run: |
+          if ! grep -qE 'build-mod[e]: none' .github/workflows/selfheal-demo.yml; then
+            echo "::error::We were unable to automatically build your code. Please replace the call to the autobuild action with your custom build steps, or choose a build mode that needs no build. (simulated)"
+            exit 1
+          fi
+
+  apt-stale:
+    if: inputs.scenario == 'apt-stale'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo apt-get install -y --no-install-recommends cowsay
+
+  image-uppercase:
+    if: inputs.scenario == 'image-uppercase'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          docker pull alpine:3.20
+          docker tag alpine:3.20 "ghcr.io/${{ github.repository }}/Self-Heal-Demo:latest"
+
+  git-dubious-ownership:
+    if: inputs.scenario == 'git-dubious-ownership'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: A copy of the checkout owned by another user (as in a container job)
+        run: sudo cp -r "$GITHUB_WORKSPACE" /tmp/demo-repo
+      - run: git -C /tmp/demo-repo log --oneline -1
+
+  windows-shell:
+    if: inputs.scenario == 'windows-shell'
+    runs-on: windows-latest
+    steps:
+      - run: |
+          export GREETING=hello
+          echo "$GREETING"
+
+  dotnet-no-solution:
+    if: inputs.scenario == 'dotnet-no-solution'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          mkdir -p dotnet-demo && cd dotnet-demo
+          dotnet new console -o src/DemoApp --no-restore
+          dotnet build
+
+  dotnet-no-restore:
+    if: inputs.scenario == 'dotnet-no-restore'
+    runs-on: ubuntu-latest
+    steps:
+      - run: dotnet new console -o restore-demo --no-restore
+      - run: dotnet build restore-demo --no-restore
+
+  dotnet-global-json:
+    if: inputs.scenario == 'dotnet-global-json'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pin the .NET SDK the project needs (global.json)
+        run: |
+          echo '{"sdk": {"version": "6.0.428", "rollForward": "disable"}}' > global.json
+      - run: dotnet --version
